@@ -38,8 +38,12 @@ contract('BFactory', async (accounts) => {
             await weth.mint(nonAdmin, toWei('1'), { from: admin });
             await dai.mint(nonAdmin, toWei('50'), { from: admin });
 
-            POOL = await factory.newBPool.call(); // this works fine in clean room
-            await factory.newBPool();
+            // ========= new =============
+            await factory.deployBPoolTemplate();
+            // arg: 1 is for salt
+            POOL = await factory.getAddress(1);
+            // ============ end new ==========
+            await factory.newBPool(1);
             pool = await BPool.at(POOL);
 
             await weth.approve(POOL, MAX);
@@ -53,6 +57,12 @@ contract('BFactory', async (accounts) => {
             const color = await factory.getColor();
             assert.equal(hexToUtf8(color), 'BRONZE');
         });
+
+        // ========= new ========
+        it('BPool is Deployed - for gas reporter', async () => {
+            const pool = await factory.newBPool(2);
+        });
+        // ========== end new =========
 
         it('isBPool on non pool returns false', async () => {
             const isBPool = await factory.isBPool(admin);

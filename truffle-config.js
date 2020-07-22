@@ -14,6 +14,12 @@ module.exports = {
             gasPrice: 0x01,
         },
     },
+    mocha: {
+        reporter: 'eth-gas-reporter',
+        reporterOptions : {
+            currency: "USD",
+         } // See options below
+      },
     // Configure your compilers
     compilers: {
         solc: {
@@ -23,7 +29,7 @@ module.exports = {
                     enabled: true,
                     runs: 100,
                 },
-                evmVersion: 'byzantium',
+                evmVersion: 'constantinople',
             },
         },
     },

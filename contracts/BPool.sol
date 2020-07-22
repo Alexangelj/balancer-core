@@ -83,7 +83,14 @@ contract BPool is BBronze, BToken, BMath {
     mapping(address=>Record) private  _records;
     uint private _totalWeight;
 
-    constructor() public {
+    // solhint-disable-next-line no-empty-blocks
+    constructor() public {}
+
+    /**
+     * @dev Called once on deployment.
+     */
+    function initialize() public {
+        require(_factory == address(0x0), "ERR_IS_INITIALIZED");
         _controller = msg.sender;
         _factory = msg.sender;
         _swapFee = MIN_FEE;

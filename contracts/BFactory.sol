@@ -16,8 +16,11 @@ pragma solidity 0.5.12;
 // Builds new BPools, logging their addresses and providing `isBPool(address) -> (bool)`
 
 import "./BPool.sol";
+import { NullCloneConstructor } from "./NullCloneConstructor.sol";
+import { CloneLib } from "./CloneLib.sol";
+import { BPoolTemplateLib } from "./BPoolTemplateLib.sol";
 
-contract BFactory is BBronze {
+contract BFactory is BBronze, NullCloneConstructor {
     event LOG_NEW_POOL(
         address indexed caller,
         address indexed pool
@@ -36,16 +39,51 @@ contract BFactory is BBronze {
         return _isBPool[b];
     }
 
-    function newBPool()
+    // ============== new =============
+
+    address public bPoolTemplate; // the fully deployed pool with creation bytecode
+
+    /**
+     * @dev Deploys the template contract with the full bytecode.
+     */
+    function deployBPoolTemplate() public {
+        bPoolTemplate = BPoolTemplateLib.deployTemplate();
+    }
+
+    function getSalt(uint extraSalt) public view returns (bytes32 salt) {
+        salt = keccak256(
+            abi.encodePacked(
+                BPoolTemplateLib.BPOOL_SALT(),
+                extraSalt
+            )
+        );
+    }
+
+    function getAddress(uint extraSalt) public view returns (address) {
+        return CloneLib.deriveInstanceAddress(bPoolTemplate, getSalt(extraSalt));
+    }
+
+    /**
+     * @dev Modified to deploy a create2 clone of a BPool based off a salt and the template contract.
+     */
+    function newBPool(uint extraSalt)
         external
         returns (BPool)
     {
-        BPool bpool = new BPool();
+        require(bPoolTemplate != address(0x0), "ERR_NO_DEPLOYED_TEMPLATE");
+        // can be anything, uses the parameter uint for the salt.
+        bytes32 salt = getSalt(extraSalt);
+        // deploys the clone
+        BPool bpool = BPool(CloneLib.create2Clone(bPoolTemplate, uint(salt)));
         _isBPool[address(bpool)] = true;
         emit LOG_NEW_POOL(msg.sender, address(bpool));
+        // initializes instead of using constructor
+        bpool.initialize();
         bpool.setController(msg.sender);
         return bpool;
     }
+
+    // ============== end new ==============
 
     address private _blabs;
 

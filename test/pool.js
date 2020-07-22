@@ -26,8 +26,12 @@ contract('BPool', async (accounts) => {
     before(async () => {
         factory = await BFactory.deployed();
 
-        POOL = await factory.newBPool.call();
-        await factory.newBPool();
+        // ========= new =============
+        await factory.deployBPoolTemplate();
+        // arg: 1 is for salt
+        POOL = await factory.getAddress(1);
+        // ============ end new ==========
+        await factory.newBPool(1);
         pool = await BPool.at(POOL);
 
         weth = await TToken.new('Wrapped Ether', 'WETH', 18);
